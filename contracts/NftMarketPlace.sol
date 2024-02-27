@@ -69,8 +69,15 @@ contract NftMarketPlace is ERC721URIStorage {
         }
         _safeMint(msg.sender, currentTokenId); // create the token
         _setTokenURI(currentTokenId, tokenUri); // ipfs data
+        tokenIdToMarketItem[currentTokenId] = MarketItem(
+            currentTokenId,
+            msg.sender,
+            address(0x0),
+            price,
+            true
+        );
         currentTokenId = currentTokenId + 1;
-        listItemToMarketPlace(currentTokenId, price, msg.sender);
+        listItemToMarketPlace(currentTokenId - 1, price, msg.sender);
         return currentTokenId - 1;
     }
 
@@ -100,7 +107,20 @@ contract NftMarketPlace is ERC721URIStorage {
         );
     }
 
-    function relistNft(uint256 tokenId, uint256 price) external payable {}
+    function relistNft(
+        uint256 tokenId,
+        uint256 price
+    ) external payable returns (uint256) {
+        if (ownerOf(tokenId) != msg.sender) {
+            revert NftMarketPlace__NotOwner();
+        }
+        if (msg.value < listingPrice) {
+            revert NftMarketPlace__InsufficientAmount();
+        }
+        listItemToMarketPlace(tokenId, price, msg.sender);
+        s_soldNfts = s_soldNfts - 1;
+        return tokenId;
+    }
 
     // Creates the sale of a marketplace item exchange of money and ownership of the listed NFT
     function exchangeNft(uint256 tokenId) external payable {
