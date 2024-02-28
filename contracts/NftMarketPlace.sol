@@ -133,7 +133,7 @@ contract NftMarketPlace is ERC721URIStorage {
             revert NftMarketPlace__InsufficientAmountSent();
         }
         tokenIdToMarketItem[tokenId].sold = true;
-        safeTransferFrom(curItem.seller, msg.sender, tokenId);
+        this.safeTransferFrom(curItem.seller, msg.sender, tokenId);
         s_soldNfts = s_soldNfts + 1;
         address previousOwner = curItem.seller;
         tokenIdToMarketItem[tokenId].seller = msg.sender;
