@@ -107,7 +107,7 @@ contract NftMarketPlace is ERC721URIStorage {
         );
     }
 
-    // RESLIST THE NFT TO SALE THAT YOU BOUGHT
+    // RESLIST THE NFT TO SALE THAT YOU BOUGHT AND YOU CAN ALSO USE THIS TO UPDATE THE PRICE OF THE NFT
     function relistNft(
         uint256 tokenId,
         uint256 price
@@ -146,6 +146,23 @@ contract NftMarketPlace is ERC721URIStorage {
             ""
         );
         if (callSuccess2 == false) {
+            revert NftMarketPlace__ExchangeFailed();
+        }
+    }
+
+    // REMOVE NFT FROM BEING LISTED ON MARKETPLACE
+    function removeFromListing(uint256 tokenId) external {
+        if (ownerOf(tokenId) != msg.sender) {
+            revert NftMarketPlace__NotOwner();
+        }
+        MarketItem memory curItem = tokenIdToMarketItem[tokenId];
+        if (curItem.sold == true) {
+            revert NftMarketPlace__NotForSale();
+        }
+        tokenIdToMarketItem[tokenId].sold = true;
+        tokenIdToMarketItem[tokenId].owner = address(0x0);
+        (bool callSuccess1, ) = payable(i_owner).call{value: listingPrice}("");
+        if (callSuccess1 == false) {
             revert NftMarketPlace__ExchangeFailed();
         }
     }
