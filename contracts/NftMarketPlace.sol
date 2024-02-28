@@ -11,6 +11,7 @@ error NftMarketPlace__NowOwner();
 error NftMarketPlace__InsufficientAmountSent();
 error NftMarketPlace__NotForSale();
 error NftMarketPlace__ExchangeFailed();
+error NftMarketPlace__OwnerCantBuy();
 
 contract NftMarketPlace is ERC721URIStorage {
     // EVENTS
@@ -42,7 +43,7 @@ contract NftMarketPlace is ERC721URIStorage {
         uint256 tokenId; // id of the token
         address seller; // seller of the token (initially the minter)
         address owner; // current owner initially 0 then setApproval to us then create exchange after exchange set to 0 again
-        uint256 price; // price to be sold at
+        uint256 price; // price to be sold at in WEI
         bool sold; // sold or not
     }
 
@@ -125,6 +126,9 @@ contract NftMarketPlace is ERC721URIStorage {
 
     // SELL THE NFT AND GET MONEY
     function exchangeNft(uint256 tokenId) external payable {
+        if (_ownerOf(tokenId) == msg.sender) {
+            revert NftMarketPlace__OwnerCantBuy();
+        }
         MarketItem memory curItem = tokenIdToMarketItem[tokenId];
         if (curItem.sold == true) {
             revert NftMarketPlace__NotForSale();
@@ -240,7 +244,7 @@ contract NftMarketPlace is ERC721URIStorage {
         return listingPrice;
     }
 
-    // SETTER FOR LISTING PRICE
+    // SETTER FOR LISTING PRICE IN WEI
     function setListingPrice(uint256 price) public onlyOwner {
         if (price <= 0) {
             revert NftMarketPlace__InsufficientAmount();
