@@ -107,6 +107,7 @@ contract NftMarketPlace is ERC721URIStorage {
         );
     }
 
+    // RESLIST THE NFT TO SALE THAT YOU BOUGHT
     function relistNft(
         uint256 tokenId,
         uint256 price
@@ -122,7 +123,7 @@ contract NftMarketPlace is ERC721URIStorage {
         return tokenId;
     }
 
-    // Creates the sale of a marketplace item exchange of money and ownership of the listed NFT
+    // SELL THE NFT AND GET MONEY
     function exchangeNft(uint256 tokenId) external payable {
         MarketItem memory curItem = tokenIdToMarketItem[tokenId];
         if (curItem.sold == true) {
@@ -149,18 +150,89 @@ contract NftMarketPlace is ERC721URIStorage {
         }
     }
 
-    // Return all unsold market items (to be listed) only if it is listed to be sold
-    // Return only items that a user has purchased (my purchase section)
-    // Return only items a user has listed (my to be sold section)
+    // RETURNS THE ARRAY OF NFTS KEPT FOR SALE
+    function listedItemsForSale() public view returns (MarketItem[] memory) {
+        uint256 unsoldItems = currentTokenId - 1 - s_soldNfts;
+        MarketItem[] memory tobeReturnedItems = new MarketItem[](unsoldItems);
+        uint256 currentIndex = 0;
+        for (uint i = 1; i < currentTokenId; i++) {
+            if (
+                tokenIdToMarketItem[i].sold == false &&
+                tokenIdToMarketItem[i].owner == address(this)
+            ) {
+                // not sold and kept for sale
+                tobeReturnedItems[currentIndex] = tokenIdToMarketItem[i];
+                currentIndex = currentIndex + 1;
+            }
+        }
+        return tobeReturnedItems;
+    }
 
+    // RETURNS THE ARRAY OF NFTS THAT ARE BOUGHT BY ME AND NOT RELISTED BY ME
+    function myNftsPurchased() public view returns (MarketItem[] memory) {
+        uint256 itemCount = 0;
+        for (uint i = 1; i < currentTokenId; i++) {
+            if (
+                tokenIdToMarketItem[i].sold == true &&
+                tokenIdToMarketItem[i].seller == msg.sender
+            ) {
+                itemCount = itemCount + 1;
+            }
+        }
+        uint256 currentIndex = 0;
+        MarketItem[] memory tobeReturnedItems = new MarketItem[](itemCount);
+        for (uint i = 1; i < currentTokenId; i++) {
+            if (
+                tokenIdToMarketItem[i].sold == true &&
+                tokenIdToMarketItem[i].seller == msg.sender
+            ) {
+                tobeReturnedItems[currentIndex] = tokenIdToMarketItem[i];
+                currentIndex = currentIndex + 1;
+            }
+        }
+        return tobeReturnedItems;
+    }
+
+    // RETURNS THE NFTS THAT ARE KEPT FOR SALE BY SPECIFIC USER
+    function myListedNfts() public view returns (MarketItem[] memory) {
+        uint256 itemCount = 0;
+        for (uint i = 1; i < currentTokenId; i++) {
+            if (
+                tokenIdToMarketItem[i].sold == false &&
+                tokenIdToMarketItem[i].seller == msg.sender
+            ) {
+                itemCount = itemCount + 1;
+            }
+        }
+        uint256 currentIndex = 0;
+        MarketItem[] memory tobeReturnedItems = new MarketItem[](itemCount);
+        for (uint i = 1; i < currentTokenId; i++) {
+            if (
+                tokenIdToMarketItem[i].sold == false &&
+                tokenIdToMarketItem[i].seller == msg.sender
+            ) {
+                tobeReturnedItems[currentIndex] = tokenIdToMarketItem[i];
+                currentIndex = currentIndex + 1;
+            }
+        }
+        return tobeReturnedItems;
+    }
+
+    // GETTER FOR LISTING PRICE
     function getListingPrice() public view returns (uint256) {
         return listingPrice;
     }
 
+    // SETTER FOR LISTING PRICE
     function setListingPrice(uint256 price) public onlyOwner {
         if (price <= 0) {
             revert NftMarketPlace__InsufficientAmount();
         }
         listingPrice = price;
+    }
+
+    // GETTER FOR TOTAL NFTS SOLD BY THE CONTRACT
+    function getNumberOfSoldNfts() public view returns (uint256) {
+        return s_soldNfts;
     }
 }
